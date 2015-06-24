@@ -2,7 +2,7 @@
               xmlns:tools="http://schemas.android.com/tools"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
-              android:background="@color/view_bg"
+
               android:gravity="center_horizontal"
               android:orientation="vertical" >
     <LinearLayout
@@ -17,14 +17,14 @@
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_marginTop="60dp"
-        android:src="@mipmap/ic_launcher" />
+        android:src="@drawable/app" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="25dp"
         android:text="@string/lbl_you_are_at"
-        android:textColor="@color/white"
+        android:textColor="#b20e0f"
         android:textSize="25dp"
         android:textStyle="bold" />
 
@@ -36,6 +36,16 @@
         android:padding="15dp"
         android:textColor="@color/white"
         android:textSize="16dp" />
+        <ImageView
+            android:id="@+id/iv_profilePic"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_marginTop="10dp"
+            android:onClick="puticon"
+            android:scaleType="fitXY"
+            android:src="@drawable/imageicon"
+            android:background="@drawable/tx_bg"
+            android:layout_gravity="center_horizontal"/>
 
     <EditText
         android:id="@+id/business_name"

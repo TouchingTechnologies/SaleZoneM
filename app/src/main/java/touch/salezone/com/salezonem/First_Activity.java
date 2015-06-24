@@ -2,18 +2,27 @@ package touch.salezone.com.salezonem;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.AsyncTask;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.os.Bundle;
 
+import com.androidquery.AQuery;
+import com.androidquery.callback.AjaxCallback;
+import com.androidquery.callback.AjaxStatus;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -31,12 +40,20 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import util.Alert;
 import util.GPSTracker;
@@ -46,12 +63,15 @@ import util.Vars;
 public class First_Activity extends Activity implements ConnectionCallbacks,
        OnConnectionFailedListener {
    // LogCat tag
+   AlertDialog alertDialog;
+    boolean ismage= false;
    private static final String TAG = First_Activity.class.getSimpleName();
     String myloc;
    private final static int PLAY_SERVICES_RESOLUTION_REQUEST = 1000;
-
+     final static String URL_FEED = "http://salezone.co/salezonem/SaleZone/register.php";
    private Location mLastLocation;
    double latitude ;
+    Bitmap photo;
    double longitude ;
    GPSTracker gps;
    Vars vars;
@@ -72,6 +92,8 @@ public class First_Activity extends Activity implements ConnectionCallbacks,
    // UI elements
    private TextView lblLocation;
    EditText business_name,mobile;
+    ImageView iv_ProfilePic;
+    private static int RESULT_LOAD_IMAGE = 1;
 
 
    @Override
@@ -83,6 +105,7 @@ public class First_Activity extends Activity implements ConnectionCallbacks,
        alert = new Alert(this);
       lblLocation = (TextView) findViewById(R.id.lblLocation);
       business_name = (EditText) findViewById(R.id.business_name);
+       iv_ProfilePic = (ImageView) findViewById(R.id.iv_profilePic);
       mobile = (EditText) findViewById(R.id.mobile);
 
 
@@ -342,11 +365,11 @@ public class First_Activity extends Activity implements ConnectionCallbacks,
                        vars.edit.putString("longitude", Double.toString(longitude));
                        vars.edit.putString("name", business_name.getText().toString());
                        vars.edit.putString("mobile", mobile.getText().toString());
-                       vars.edit.commit();
-
-                       Intent main = new Intent(this, MainActivity.class);
-                       startActivity(main);
-                       finish();
+                    //   vars.edit.commit();
+                       aync_data();
+                    //   Intent main = new Intent(this, MainActivity.class);
+                     //  startActivity(main);
+                   //    finish();
 
                    }
                }else{
@@ -378,6 +401,97 @@ public class First_Activity extends Activity implements ConnectionCallbacks,
 
         } else {
             return false;
+        }
+    }
+    public void puticon(View v){
+        Intent i = new Intent(
+                Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+        startActivityForResult(i, RESULT_LOAD_IMAGE);
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
+            Uri selectedImage = data.getData();
+
+            String[] filePathColumn = { MediaStore.Images.Media.DATA };
+
+            Cursor cursor = getContentResolver().query(selectedImage,
+                    filePathColumn, null, null, null);
+            cursor.moveToFirst();
+
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String picturePath = cursor.getString(columnIndex);
+            cursor.close();
+            ismage = true;
+            iv_ProfilePic.setImageBitmap(BitmapFactory.decodeFile(picturePath));
+
+            photo = BitmapFactory.decodeFile(picturePath);
+        }
+
+
+    }
+    private void aync_data(){
+        if(ismage) {
+            AQuery aq = new AQuery(this);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            photo.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            byte[] data = baos.toByteArray();
+
+
+            alertDialog = ProgressDialog.show(this, "", "Please wait...");
+            Map<String, Object> params = new HashMap<String, Object>();
+            params.put("name",  business_name.getText().toString());
+            params.put("location", lblLocation.getText().toString());
+            params.put("latitude",  Double.toString(latitude));
+            params.put("longititude",  Double.toString(longitude));
+            params.put("mobile", mobile.getText().toString());
+            params.put("data", data);
+
+            aq.ajax(URL_FEED, params, JSONObject.class, new AjaxCallback<JSONObject>() {
+
+                @Override
+                public void callback(String url, JSONObject json, AjaxStatus status) {
+                    int source = status.getSource();
+                    int responseCode = status.getCode();
+                    long duration = status.getDuration();
+                    Date fetchedTime = status.getTime();
+                    String message = status.getMessage();
+                    String redirect = status.getRedirect();
+                    DefaultHttpClient client = status.getClient();
+
+                    //returns the html response when response code is not 2xx
+                    String errorResponse = status.getError();
+                    vars.log("sou========" + source);
+                    vars.log("responseCode========" + responseCode);
+                    vars.log("duration========" + duration);
+                    vars.log("fetchedTime========" + fetchedTime);
+                    vars.log("message========" + message);
+                    vars.log("redirect========" + redirect);
+                    vars.log("client========" + client);
+                    vars.log("errorResponse========" + errorResponse);
+
+                    if (responseCode != 200) {
+                        alertDialog.dismiss();
+                        alert.alerterSuccess("Error", "No internet connection");
+                    } else if (json != null) {
+                        vars.log("===before if statement=======" + json.toString());
+                        if (json.toString() != null) {
+                            alertDialog.dismiss();
+                            alert.alerterSuccess("Goood", json.toString());
+                        }
+                    } else {
+                        vars.log("====================string========================null");
+                    }
+                }
+
+
+            });
+        }else{
+            alert.alerterSuccess("Error", "Upload your icon");
         }
     }
 }

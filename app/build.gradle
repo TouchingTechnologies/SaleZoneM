@@ -25,4 +25,7 @@ dependencies {
     compile 'com.google.android.gms:play-services:7.0.0'
     compile 'com.android.support:support-v4:22.1.1'
     compile 'com.googlecode.libphonenumber:libphonenumber:7.0.5'
+    compile files('libs/androidquery.jar')
+    compile 'com.squareup.retrofit:retrofit:1.9.0'
+    compile 'com.google.code.gson:gson:2.3.1'
 }

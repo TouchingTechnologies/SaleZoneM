@@ -20,9 +20,7 @@ public class ReviewlogFragment extends Fragment {
 		View rootView = inflater.inflate(R.layout.fragment_reviewlog, container, false);
 		vars = new Vars(getActivity());
 		test = (TextView) rootView.findViewById(R.id.test);
-		test.setText("loca=="+vars.location+"longi=="+vars.longitude);
-
-		
+		test.setText("loca=="+vars.location+"longi=="+vars.longitude+"latitude===="+vars.latitudes);
 		return rootView;
 	}
 }
